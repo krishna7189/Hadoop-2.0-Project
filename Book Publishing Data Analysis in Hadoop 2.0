@@ -1,0 +1,56 @@
+                                CREATE A NEW DATABASE NAMED PROJECT
+create database project;
+
+                                USING CREATED DATABASE PROJECT
+use project;
+
+                           
+                           CREATING AND LOADING TABLE TO STORE DATA: BOOKS
+CREATE TABLE books (ISBN STRING, Title STRING, Author STRING, Year_of_Pub STRING, Publisher STRING, Image_URL_S STRING, Image_URL_M STRING, Image_URL_L STRING ) ROW FORMAT DELIMITED FIELDS TERMINATED BY "<>" STORED AS TEXTFILE;
+LOAD DATA LOCAL INPATH '/home/edureka/Desktop/Project/BX-Books.csv' OVERWRITE INTO TABLE books;
+
+                     
+                    
+                     QUESTION 1:- Find out the frequency of books published each year. 
+                    CREATING AND OVERWRITING TABLE: YEAR   .....    
+CREATE table Year (Year_of_Pub STRING,Count_of_Pubs INT) ROW FORMAT DELIMITED FIELDS TERMINATED BY ",";
+INSERT OVERWRITE table Year
+SELECT Year_of_Pub, count(DISTINCT Title) as Count_of_Pubs from books group by Year_of_Pub sort by Count_of_Pubs DESC;
+
+                   
+                   
+                    QUESTION 2:- Find out in which year maximum number of books were published
+SELECT Year_of_Pub, count(DISTINCT Title) as Count_of_Pubs from books group by Year_of_Pub sort by Count_of_Pubs DESC limit 1;
+
+                             
+                             
+                             CREATING AND LOADING DATA: BOOK-RATINGS
+CREATE TABLE book_rating (USER_ID STRING, ISBN STRING, Rating STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY "<>" STORED AS TEXTFILE;
+LOAD DATA LOCAL INPATH '/home/edureka/Desktop/Project/BX-Book-Ratings.csv' OVERWRITE INTO TABLE book_rating;
+CREATING AND OVERWRITNG TABLE: BOOK_RATING_INT  .....  CONVERTING RATING AND USER_ID AS INTEGERS FROM STRING DATA TYPE
+CREATE TABLE book_rating_int (USER_ID INT, ISBN STRING, Rating INT) ROW FORMAT DELIMITED FIELDS TERMINATED BY ",";
+INSERT OVERWRITE TABLE book_rating_int
+select regexp_replace(USER_ID,"\"",""), regexp_replace(ISBN,">",""), regexp_replace(regexp_replace(rating,"\"",""),">","") from book_rating;
+
+                      
+                      
+                       JOINING BOTH THE TABLES - BOOKS AND BOOK_RATING_INT
+CREATE TABLE book_join (ISBN STRING, Year_of_Pub INT, Title STRING, Rating INT) ROW FORMAT DELIMITED FIELDS TERMINATED BY ",";
+INSERT OVERWRITE TABLE book_join
+select a.ISBN, regexp_replace(regexp_replace(a.Year_of_Pub,"\"",""),">",""), a.Title, b.Rating
+from books a join book_rating_int b on a.ISBN = b.ISBN;
+
+
+
+                    QUESTION 3:- Find out how many book were published based on ranking in the year 2002.
+
+Create Table Rating_2002 (Rating INT, Count_of_Books INT) ROW FORMAT DELIMITED FIELDS TERMINATED BY ",";
+INSERT OVERWRITE TABLE Rating_2002
+Select Rating, count(Title) from book_join where Year_of_Pub = 2002 group by Rating order by Rating asc;
+
+
+
+
+
+
+
